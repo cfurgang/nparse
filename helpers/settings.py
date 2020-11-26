@@ -181,42 +181,36 @@ class SettingsWindow(QDialog):
         ssl_secondary_duration.setWhatsThis(WHATS_THIS_PVP_DURATION)
         ssl_secondary_duration.setObjectName('spells:use_secondary_all')
         ssl.addRow('Use PvP Durations', ssl_secondary_duration)
+        spells_settings.setLayout(ssl)
+        stacked_widgets.append(('Spells', spells_settings))
 
         # caoilainn fork
         # log streaming
-        ssl_push_notifications = QCheckBox()
-        ssl_push_notifications.setWhatsThis(WHATS_THIS_PUSH_NOTIFICATIONS)
-        ssl_push_notifications.setObjectName('spells:use_push_notifications')
-        ssl.addRow('Use Push Notifications', ssl_push_notifications)
+        push_settings = QFrame()
+        push = QFormLayout()
+        push.addRow(SettingsHeader('push notifications (experimental)'))
 
-        ssl_push_notifications_afk_only = QCheckBox()
-        ssl_push_notifications_afk_only.setObjectName('spells:use_push_notifications_afk_only')
-        ssl.addRow('Push Only When AFK', ssl_push_notifications_afk_only)
+        push_enable = QCheckBox()
+        push_enable.setWhatsThis(WHATS_THIS_PUSH_NOTIFICATIONS)
+        push_enable.setObjectName('spells:use_push_notifications')
+        push.addRow('Use Push Notifications', push_enable)
 
-        ssl_prowl_api_key = QLineEdit()
-        ssl_prowl_api_key.setMaxLength(512)
-        ssl_prowl_api_key.setObjectName('spells:prowl_api_key')
-        ssl.addRow('Prowl API Key', ssl_prowl_api_key)
+        push_afk_only = QCheckBox()
+        push_afk_only.setObjectName('spells:use_push_notifications_afk_only')
+        push.addRow('Push Only When AFK', push_afk_only)
 
-        ssl_character_names = QLineEdit()
-        ssl_character_names.setMaxLength(512)
-        ssl_character_names.setObjectName('spells:character_names')
-        ssl.addRow('Character Names (comma sep)', ssl_character_names)
+        push_api_key = QLineEdit()
+        push_api_key.setMaxLength(512)
+        push_api_key.setObjectName('spells:prowl_api_key')
+        push.addRow('Prowl API Key', push_api_key)
 
-        # ssl_log_streaming = QCheckBox()
-        # ssl_log_streaming.setWhatsThis(WHATS_THIS_LOG_STREAMING)
-        # ssl_log_streaming.setObjectName('spells:use_log_streaming')
-        # ssl.addRow('Use Log Streaming', ssl_log_streaming)
+        push_character_names = QLineEdit()
+        push_character_names.setMaxLength(512)
+        push_character_names.setObjectName('spells:character_names')
+        push.addRow('Character Names (comma sep)', push_character_names)
 
-        # ssl_log_streaming_host = QLineEdit()
-        # ssl_log_streaming_host.setMaxLength(256)
-        # ssl_log_streaming_host.setObjectName('spells:log_streaming_host')
-        # ssl.addRow('Log Streaming URL', ssl_log_streaming_host)
-
-
-        spells_settings.setLayout(ssl)
-
-        stacked_widgets.append(('Spells', spells_settings))
+        push_settings.setLayout(push)
+        stacked_widgets.append(('Push', push_settings))
 
         # Map Settings
         map_settings = QFrame()

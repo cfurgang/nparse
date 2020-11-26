@@ -42,12 +42,18 @@ class Spells(ParserWindow):
         self._scroll_area.setWidget(self._spell_container)
         self._scroll_area.setObjectName('SpellScrollArea')
         self.content.addWidget(self._scroll_area, 1)
-        self._custom_timer_toggle = QPushButton('\u26A1')
-        self._custom_timer_toggle.setCheckable(True)
-        self._custom_timer_toggle.setToolTip('Parse Custom Timers')
-        self._custom_timer_toggle.setChecked(config.data['spells']['use_custom_triggers'])
-        self._custom_timer_toggle.clicked.connect(self._toggle_custom_timers)
-        self.menu_area.addWidget(self._custom_timer_toggle)
+        # self._custom_timer_toggle = QPushButton('\u26A1')
+        # self._custom_timer_toggle.setCheckable(True)
+        # self._custom_timer_toggle.setToolTip('Parse Custom Timers')
+        # self._custom_timer_toggle.setChecked(config.data['spells']['use_custom_triggers'])
+        # self._custom_timer_toggle.clicked.connect(self._toggle_custom_timers)
+        # self.menu_area.addWidget(self._custom_timer_toggle)
+        self._push_toggle = QPushButton('P')
+        self._push_toggle.setCheckable(True)
+        self._push_toggle.setToolTip('Enable Push Notifications')
+        self._push_toggle.setChecked(config.data['spells']['use_push_notifications'])
+        self._push_toggle.clicked.connect(self._toggle_push_notifications)
+        self.menu_area.addWidget(self._push_toggle)
         self._level_widget = QSpinBox()
         self._level_widget.setRange(1, 65)
         self._level_widget.setValue(config.data['spells']['level'])
@@ -169,6 +175,11 @@ class Spells(ParserWindow):
     def _toggle_custom_timers(self, _):
         config.data['spells']['use_custom_triggers'] = \
             self._custom_timer_toggle.isChecked()
+        config.save()
+
+    def _toggle_push_notifications(self, _):
+        config.data['spells']['use_push_notifications'] = \
+            self._push_toggle.isChecked()
         config.save()
 
 
