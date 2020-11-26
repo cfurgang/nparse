@@ -252,7 +252,7 @@ class SpellTarget(QFrame):
         recast = False
         for sw in self.findChildren(SpellWidget):
             target_type *= sw.spell.type
-            if sw.spell.name == spell.name:
+            if sw.spell.name == spell.name and sw.timestamp == timestamp:
                 recast = True
                 sw.recast(timestamp)
         if not recast:
@@ -276,6 +276,7 @@ class SpellWidget(QFrame):
         super().__init__()
         self.setObjectName('SpellWidget')
         self.spell = spell
+        self.timestamp = timestamp
         self._active = True
 
         self._setup_ui()
