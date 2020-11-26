@@ -105,6 +105,9 @@ class SettingsWindow(QDialog):
         self._set_values()
         self.reject()
 
+    def showEvent(self, _):
+        self._set_values()
+
     def closeEvent(self, _):
         self._set_values()
         self.reject()
