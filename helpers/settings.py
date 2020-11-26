@@ -134,6 +134,7 @@ class SettingsWindow(QDialog):
         # General Settings
         general_settings = QFrame()
         gsl = QFormLayout()
+        gsl.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         gsl.addRow(SettingsHeader('general'))
         gsl_update_check = QCheckBox()
         gsl_update_check.setObjectName('general:update_check')
@@ -158,6 +159,7 @@ class SettingsWindow(QDialog):
         # Spell Settings
         spells_settings = QFrame()
         ssl = QFormLayout()
+        ssl.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         ssl.addRow(SettingsHeader('general'))
         ssl_casting_window = QCheckBox()
         ssl_casting_window.setWhatsThis(WHATS_THIS_CASTING_WINDOW)
@@ -189,6 +191,7 @@ class SettingsWindow(QDialog):
         # log streaming
         push_settings = QFrame()
         push = QFormLayout()
+        push.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         push.addRow(SettingsHeader('push notifications (experimental)'))
 
         push_enable = QCheckBox()
@@ -208,6 +211,14 @@ class SettingsWindow(QDialog):
         push_timer_afk_only.setObjectName('push:timer_expiry_afk_only')
         push.addRow('Timers Only When AFK', push_timer_afk_only)
 
+        push_afk_idle_time = QSpinBox()
+        push_afk_idle_time.setRange(0, 600)
+        push_afk_idle_time.setSingleStep(1)
+        push_afk_idle_time.setSuffix('s')
+        push_afk_idle_time.setObjectName('push:idle_time_to_afk')
+        push.addRow('Idle time to be AFK', push_afk_idle_time)
+        push.addWidget(QLabel("You are always afk when using /afk.\n(0 to disable idle timer)"))
+
         push_api_key = QLineEdit()
         push_api_key.setMaxLength(512)
         push_api_key.setObjectName('push:prowl_api_key')
@@ -216,7 +227,7 @@ class SettingsWindow(QDialog):
         push_character_names = QLineEdit()
         push_character_names.setMaxLength(512)
         push_character_names.setObjectName('push:character_names')
-        push.addRow('Character Names (comma sep)', push_character_names)
+        push.addRow('Character Names\n(comma separated)', push_character_names)
 
         push_edit_triggers = QPushButton("Edit")
         push_edit_triggers.clicked.connect(self._get_push_triggers)
@@ -228,6 +239,7 @@ class SettingsWindow(QDialog):
         # Map Settings
         map_settings = QFrame()
         msl = QFormLayout()
+        msl.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         msl.addRow(SettingsHeader('general'))
         msl_line_width = QSpinBox()
         msl_line_width.setObjectName('maps:line_width')

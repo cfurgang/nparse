@@ -222,6 +222,11 @@ def verify_settings():
         data['push'].get('character_names', ""),
         ""
     )
+    data['push']['idle_time_to_afk'] = get_setting(
+        data['push'].get('idle_time_to_afk', 60),
+        60
+    )
+
     data['push']['triggers'] = get_setting(
         data['push'].get('triggers', [[]]),
         list(DEFAULT_PUSH_REGEXES),

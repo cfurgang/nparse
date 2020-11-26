@@ -3,6 +3,7 @@ import re
 from helpers.logregex import AFK_ON_REGEX, AFK_OFF_REGEX
 from pyprowl import Prowl
 from helpers import config
+from helpers.win32 import getIdleTime
 
 
 class LogStreamer:
@@ -11,6 +12,13 @@ class LogStreamer:
         self.trigger_cache = None
         self.trigger_cache_hash = None
         self.is_afk = False
+
+    def is_idle_or_afk(self):
+        idle_time = config.data['push']['idle_time_to_afk']
+        if idle_time > 0:
+            return self.is_afk or getIdleTime() > idle_time
+        else:
+            return self.is_afk
 
     def get_regex_triggers(self):
         cfg = tuple([tuple(l) for l in config.data['push']['triggers']])
@@ -27,7 +35,7 @@ class LogStreamer:
         if not config.data['push']['timer_expiry'] or not config.data['push']['push_enabled']:
             return
 
-        if config.data['push']['timer_expiry_afk_only'] and not self.is_afk:
+        if config.data['push']['timer_expiry_afk_only'] and not self.is_idle_or_afk():
             return
 
         title = spell.name.title()
@@ -71,7 +79,7 @@ class LogStreamer:
                 if len(config.data['push']['prowl_api_key']) == 0:
                     print("LogStreamer ERROR: No API key supplied")
                     continue
-                if not self.is_afk and config.data['push']['afk_only']:
+                if not self.is_idle_or_afk() and config.data['push']['afk_only']:
                     print("DEBUG: Skipping %s because you are not AFK." % name)
                     continue
 
