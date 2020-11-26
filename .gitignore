@@ -62,4 +62,6 @@ docs/_build/
 
 wiki/
 old/
+venv/
+temp/
 nparse.config.json
