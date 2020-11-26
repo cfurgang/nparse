@@ -25,11 +25,14 @@ class ParserWindow(QFrame):
 
         self._title = QLabel()
         self._title.setObjectName('ParserWindowTitle')
+        self._afk_indicator = QLabel('')
+        self._afk_indicator.setObjectName("ParserWindowAFKIndicator")
 
         button = QPushButton(u'\u2637')
         button.setObjectName('ParserWindowMoveButton')
         self._menu_content.addWidget(button, 0)
-        self._menu_content.addWidget(self._title, 1)
+        self._menu_content.addWidget(self._title, 0)
+        self._menu_content.addWidget(self._afk_indicator, 1)
 
         menu_area = QWidget()
         menu_area.setObjectName('ParserWindowMenu')

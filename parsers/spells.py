@@ -33,6 +33,7 @@ class Spells(ParserWindow):
         self._zoning = None  # holds time of zone or None
         self._spell_triggers = []  # need a queue because of landing windows
         self._spell_trigger = None
+        self._update_afk()
 
     def _setup_ui(self):
         self.setMinimumWidth(150)
@@ -60,6 +61,12 @@ class Spells(ParserWindow):
         self._level_widget.setPrefix('lvl. ')
         self.menu_area.addWidget(self._level_widget, 0)
         self._level_widget.valueChanged.connect(self._level_change)
+
+    def _update_afk(self):
+        text = 'AFK' if self.logstreamer.is_idle_or_afk() else ''
+        if text != self._afk_indicator.text():
+            self._afk_indicator.setText(text)
+        QTimer.singleShot(1000, self._update_afk)
 
     def _spell_triggered(self):
         """SpellTrigger spell_triggered event handler. """
