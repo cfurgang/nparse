@@ -206,6 +206,10 @@ def verify_settings():
         data['push'].get('afk_only', True),
         True
     )
+    data['push']['timer_expiry'] = get_setting(
+        data['push'].get('timer_expiry', True),
+        True
+    )
     data['push']['prowl_api_key'] = get_setting(
         data['push'].get('prowl_api_key', ""),
         ""

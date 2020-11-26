@@ -360,6 +360,10 @@ class SpellWidget(QFrame):
                 self._time_label.setProperty('Warning', True)
                 self._time_label.setStyle(self._time_label.style())
             if remaining_seconds <= 0:
+                target = self.parentWidget()
+                spells = self.parentWidget().parentWidget().parentWidget().parentWidget().parentWidget()
+                if isinstance(spells, Spells) and isinstance(target, SpellTarget):
+                    spells.logstreamer.handle_timer_expiry(self.spell, target.name)
                 self._remove()
             self._time_label.setText(format_time(remaining))
         QTimer.singleShot(1000, self._update)

@@ -23,6 +23,25 @@ class LogStreamer:
     def get_character_names(self):
         return ["you"] + list(map(lambda c: c.strip().lower(), config.data['push']['character_names'].split(',')))
 
+    def handle_timer_expiry(self, spell, target):
+        if not config.data['push']['timer_expiry'] or not config.data['push']['push_enabled']:
+            return
+
+        description = "Your timer for %s has expired." % spell.name
+        if spell.id != 0:
+            if target == '__you__':
+                description = "Your cast of %s has faded on your character." % (spell.name)
+            else:
+                description = "Your cast of %s on %s has faded." % (spell.name, target)
+
+        prowl = Prowl(config.data['push']['prowl_api_key'])
+        prowl.notify(
+            event="%s Timer" % spell.name,
+            description=description,
+            priority=0,
+            appName='EverQuest'
+        )
+
     def stream(self, timestamp, text):
         # Switch AFK on and off
         if AFK_ON_REGEX.match(text):

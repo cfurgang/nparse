@@ -198,7 +198,11 @@ class SettingsWindow(QDialog):
 
         push_afk_only = QCheckBox()
         push_afk_only.setObjectName('push:afk_only')
-        push.addRow('Push Only When AFK', push_afk_only)
+        push.addRow('Enable Triggers Only When AFK', push_afk_only)
+
+        push_timer_expiry = QCheckBox()
+        push_timer_expiry.setObjectName('push:timer_expiry')
+        push.addRow('Push When Timer Expires', push_timer_expiry)
 
         push_api_key = QLineEdit()
         push_api_key.setMaxLength(512)
@@ -212,7 +216,7 @@ class SettingsWindow(QDialog):
 
         push_edit_triggers = QPushButton("Edit")
         push_edit_triggers.clicked.connect(self._get_push_triggers)
-        push.addRow('Custom Push Triggers', push_edit_triggers)
+        push.addRow('Push Triggers', push_edit_triggers)
 
         push_settings.setLayout(push)
         stacked_widgets.append(('Push', push_settings))
