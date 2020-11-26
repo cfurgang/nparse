@@ -13,7 +13,7 @@ class LogStreamer:
         self.is_afk = False
 
     def get_regex_triggers(self):
-        cfg = tuple([tuple(l) for l in config.data['spells']['push_notification_triggers']])
+        cfg = tuple([tuple(l) for l in config.data['push']['triggers']])
         cfghash = hash(cfg)
         if self.trigger_cache_hash != cfghash:
             self.trigger_cache_hash = cfghash
@@ -21,7 +21,7 @@ class LogStreamer:
         return self.trigger_cache
 
     def get_character_names(self):
-        return ["you"] + list(map(lambda c: c.strip().lower(), config.data['spells']['character_names'].split(',')))
+        return ["you"] + list(map(lambda c: c.strip().lower(), config.data['push']['character_names'].split(',')))
 
     def stream(self, timestamp, text):
         # Switch AFK on and off
@@ -35,17 +35,17 @@ class LogStreamer:
             return
 
         # Skip if we are not using push notifications
-        if config.data['spells']['use_push_notifications'] is False:
+        if config.data['push']['push_enabled'] is False:
             return
 
         # Detect triggers
         for name, trigger in self.get_regex_triggers():
             match = trigger.match(text)
             if match:
-                if len(config.data['spells']['prowl_api_key']) == 0:
+                if len(config.data['push']['prowl_api_key']) == 0:
                     print("LogStreamer ERROR: No API key supplied")
                     continue
-                if not self.is_afk and config.data['spells']['use_push_notifications_afk_only']:
+                if not self.is_afk and config.data['push']['afk_only']:
                     print("DEBUG: Skipping %s because you are not AFK." % name)
                     continue
 
@@ -55,7 +55,7 @@ class LogStreamer:
                     continue
 
                 print("DEBUG: Sent %s notification: %s" % (name, text))
-                prowl = Prowl(config.data['spells']['prowl_api_key'])
+                prowl = Prowl(config.data['push']['prowl_api_key'])
                 prowl.notify(
                     event=name,
                     description=text,
@@ -65,7 +65,7 @@ class LogStreamer:
 
     def _compile_triggers(self):
         self.trigger_cache = []
-        for name, regex in config.data['spells']['push_notification_triggers']:
+        for name, regex in config.data['push']['triggers']:
             self.trigger_cache.append(
                 (name, re.compile(regex))
             )

@@ -9,6 +9,7 @@ from PyQt5.QtCore import Qt
 from helpers import config, text_time_to_seconds
 
 from parsers.spells import CustomTrigger
+from helpers.logregex import DEFAULT_PUSH_REGEXES
 
 
 WHATS_THIS_CASTING_WINDOW = """The Casting Window is a range of time in which the spell you are casting will land.
@@ -28,10 +29,7 @@ on Red.  Using the 'PvP Duration' will use the secondary timers for non benefici
 durations for all good buffs.
 """.replace('\n', ' ')
 
-# caoilainn fork
-# log streaming
-WHATS_THIS_PUSH_NOTIFICATIONS = """When enabled, sends important log messages to your Prowl devices. You must specify an API key to use this option."""
-# WHATS_THIS_LOG_STREAMING = """When enabled, streams some of your log messages to the specified server."""
+WHATS_THIS_PUSH_NOTIFICATIONS = """When enabled, sends important log messages to your Prowl devices. You must specify an API key to use this option.""".replace('\n', ' ')
 
 
 class SettingsWindow(QDialog):
@@ -195,22 +193,26 @@ class SettingsWindow(QDialog):
 
         push_enable = QCheckBox()
         push_enable.setWhatsThis(WHATS_THIS_PUSH_NOTIFICATIONS)
-        push_enable.setObjectName('spells:use_push_notifications')
+        push_enable.setObjectName('push:push_enabled')
         push.addRow('Use Push Notifications', push_enable)
 
         push_afk_only = QCheckBox()
-        push_afk_only.setObjectName('spells:use_push_notifications_afk_only')
+        push_afk_only.setObjectName('push:afk_only')
         push.addRow('Push Only When AFK', push_afk_only)
 
         push_api_key = QLineEdit()
         push_api_key.setMaxLength(512)
-        push_api_key.setObjectName('spells:prowl_api_key')
+        push_api_key.setObjectName('push:prowl_api_key')
         push.addRow('Prowl API Key', push_api_key)
 
         push_character_names = QLineEdit()
         push_character_names.setMaxLength(512)
-        push_character_names.setObjectName('spells:character_names')
+        push_character_names.setObjectName('push:character_names')
         push.addRow('Character Names (comma sep)', push_character_names)
+
+        push_edit_triggers = QPushButton("Edit")
+        push_edit_triggers.clicked.connect(self._get_push_triggers)
+        push.addRow('Custom Push Triggers', push_edit_triggers)
 
         push_settings.setLayout(push)
         stacked_widgets.append(('Push', push_settings))
@@ -263,6 +265,10 @@ class SettingsWindow(QDialog):
         dialog = CustomTriggerSettings()
         dialog.exec()
 
+    def _get_push_triggers(self):
+        dialog = PushTriggerSettings()
+        dialog.exec()
+
 
 class SettingsHeader(QLabel):
 
@@ -313,6 +319,7 @@ class CustomTriggerSettings(QDialog):
 
         trigger_layout = QFormLayout()
         trigger_layout.setSpacing(10)
+        trigger_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
 
         trigger_layout.addRow(SettingsHeader('Trigger'))
 
@@ -454,4 +461,179 @@ class CustomTriggerSettings(QDialog):
     def closeEvent(self, _):
         self._save_to_config()
         self.accept()
-        
+
+
+class PushTriggerSettings(QDialog):
+
+    def __init__(self):
+        super().__init__()
+
+        self._custom_triggers = {}
+        self._current_trigger = ''
+
+        self.setWindowTitle("Custom Push Triggers")
+        self._setup_ui()
+        self._load_from_config()
+
+    def _setup_ui(self):
+
+        layout = QVBoxLayout()
+
+        self._triggers = QComboBox()
+        self._triggers.setObjectName("TriggersCombo")
+        self._triggers.activated.connect(self._activated)
+        layout.addWidget(self._triggers, 1)
+
+        button_layout = QHBoxLayout()
+        self._add_trigger_button = QPushButton()
+        self._add_trigger_button.setText('add')
+        self._add_trigger_button.clicked.connect(self._add_trigger)
+        button_layout.addWidget(self._add_trigger_button)
+
+        self._remove_trigger_button = QPushButton()
+        self._remove_trigger_button.setText('remove')
+        self._remove_trigger_button.clicked.connect(self._remove_trigger)
+        button_layout.addWidget(self._remove_trigger_button)
+
+        self._save_trigger_button = QPushButton()
+        self._save_trigger_button.setText('save')
+        self._save_trigger_button.clicked.connect(self._save_trigger)
+        button_layout.addWidget(self._save_trigger_button)
+
+        layout.addItem(button_layout)
+
+        trigger_layout = QFormLayout()
+        trigger_layout.setSpacing(10)
+        trigger_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+
+        trigger_layout.addRow(SettingsHeader('Trigger'))
+
+        self._trigger_name = QLineEdit()
+        self._trigger_name.setMaxLength(50)
+        trigger_layout.addRow('Name', self._trigger_name)
+
+        self._trigger_text = QLineEdit()
+        trigger_layout.addRow('Pattern', self._trigger_text)
+
+        trigger_layout.addWidget(QLabel("Supports Regular Expressions"))
+        layout.addItem(trigger_layout)
+        layout.addWidget(QWidget(), 1)  # spacer
+
+        button_layout = QHBoxLayout()
+        self._reset_all_button = QPushButton("Reset To Defaults")
+        self._reset_all_button.clicked.connect(self._reset_all)
+        button_layout.addWidget(self._reset_all_button)
+        self._reset_defaults_button = QPushButton("")
+        button_layout.addWidget(QWidget(), 1)  # spacer
+        self._exit_button = QPushButton("Close")
+        self._exit_button.clicked.connect(self._close)
+        button_layout.addWidget(self._exit_button)
+        layout.addItem(button_layout)
+
+        self.setLayout(layout)
+
+    def _reset_all(self, _):
+        config.data['push']['triggers'] = DEFAULT_PUSH_REGEXES
+        config.save()
+        self._load_from_config()
+
+    def _load_from_config(self):
+        self._triggers.clear()
+        for item in config.data['push']['triggers']:
+            self._custom_triggers[item[0]] = item
+            self._triggers.addItem(item[0])
+
+        if self._custom_triggers:
+            ct = self._custom_triggers[self._triggers.currentText()]
+            self._trigger_name.setText(ct[0])
+            self._trigger_text.setText(ct[1])
+            self._current_trigger = self._triggers.currentText()
+        else:
+            self._current_trigger = None
+            self._clear()
+
+    def _save_to_config(self):
+        config.data['push']['triggers'] =\
+            [
+                [x[0], x[1]] for x
+                in sorted(self._custom_triggers.values(), key=lambda x: x[0])
+                if x[0] != ""
+            ]
+        config.save()
+
+    def _add_trigger(self):
+        self._triggers.addItem('')
+        self._triggers.setCurrentIndex(self._triggers.count() - 1)
+        self._current_trigger = self._triggers.currentText()
+        self._clear()
+        self._trigger_name.setPlaceholderText('<new>')
+        self._trigger_name.selectAll()
+        self._trigger_name.setFocus()
+        self._trigger_text.setPlaceholderText('match*me')
+
+    def _remove_trigger(self):
+        if self._triggers.currentText():
+            self._custom_triggers.pop(self._triggers.currentText())
+            self._save_to_config()
+            self._load_from_config()
+        else:
+            self._triggers.removeItem(self._triggers.currentIndex())
+        self._load_from_config()
+
+    def _save_trigger(self):
+        if self._trigger_name.text():
+            # validate text and time
+            if self._trigger_text.text():
+                if self._trigger_name.text() in self._custom_triggers.keys() and \
+                        not self._trigger_name.text() == self._current_trigger:
+                    m = QMessageBox()
+                    m.setText("A push trigger with this name already exists.")
+                    m.exec()
+                elif not self._trigger_name.text() == self._current_trigger and \
+                        not self._current_trigger == '':
+                    # update name and info
+                    ct = self._custom_triggers.pop(self._current_trigger)
+                    ct[0] = self._trigger_name.text()
+                    ct[1] = self._trigger_text.text()
+                    self._custom_triggers[ct[0]] = ct
+                elif self._current_trigger == '':
+                    # new trigger
+                    self._custom_triggers[self._trigger_name.text()] = [self._trigger_name.text(), self._trigger_text.text()]
+                else:
+                    # update
+                    ct = self._custom_triggers[self._current_trigger]
+                    ct[0] = self._trigger_text.text()
+                    ct[1] = self._trigger_time.text()
+                    self._custom_triggers[self._current_trigger] = ct
+
+                # save and reload
+                current_index = self._triggers.currentIndex()
+                self._save_to_config()
+                self._load_from_config()
+                self._triggers.setCurrentIndex(current_index)
+                self._activated(None)
+
+            else:
+                m = QMessageBox()
+                m.setText("Both the name and trigger expression must be provided.")
+                m.exec()
+
+    def _activated(self, _):
+        self._current_trigger = name = self._triggers.currentText()
+        if name != "":
+            self._trigger_name.setText(self._custom_triggers[name][0])
+            self._trigger_text.setText(self._custom_triggers[name][1])
+        else:
+            self._clear()
+
+    def _clear(self):
+        self._trigger_name.clear()
+        self._trigger_text.clear()
+
+    def _close(self, _):
+        self._save_to_config()
+        self.accept()
+
+    def closeEvent(self, _):
+        self._save_to_config()
+        self.accept()

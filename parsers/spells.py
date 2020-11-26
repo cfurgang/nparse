@@ -50,8 +50,8 @@ class Spells(ParserWindow):
         # self.menu_area.addWidget(self._custom_timer_toggle)
         self._push_toggle = QPushButton('P')
         self._push_toggle.setCheckable(True)
-        self._push_toggle.setToolTip('Enable Push Notifications')
-        self._push_toggle.setChecked(config.data['spells']['use_push_notifications'])
+        self._push_toggle.setToolTip('Toggle Push Notifications')
+        self._push_toggle.setChecked(config.data['push']['push_enabled'])
         self._push_toggle.clicked.connect(self._toggle_push_notifications)
         self.menu_area.addWidget(self._push_toggle)
         self._level_widget = QSpinBox()
@@ -178,7 +178,7 @@ class Spells(ParserWindow):
         config.save()
 
     def _toggle_push_notifications(self, _):
-        config.data['spells']['use_push_notifications'] = \
+        config.data['push']['push_enabled'] = \
             self._push_toggle.isChecked()
         config.save()
 

@@ -197,24 +197,25 @@ def verify_settings():
 
     # caoilainn fork
     # log streaming
-    data['spells']['use_push_notifications'] = get_setting(
+    data['push'] = data.get('push', {})
+    data['push']['push_enabled'] = get_setting(
         data['spells'].get('use_push_notifications', False),
         False
     )
-    data['spells']['use_push_notifications_afk_only'] = get_setting(
+    data['push']['afk_only'] = get_setting(
         data['spells'].get('use_push_notifications_afk_only', True),
         True
     )
-    data['spells']['prowl_api_key'] = get_setting(
+    data['push']['prowl_api_key'] = get_setting(
         data['spells'].get('prowl_api_key', ""),
         ""
     )
-    data['spells']['character_names'] = get_setting(
-        data['spells'].get('character_names', ""),
+    data['push']['character_names'] = get_setting(
+        data['push'].get('character_names', ""),
         ""
     )
-    data['spells']['push_notification_triggers'] = get_setting(
-        data['spells'].get('push_notification_triggers', [[]]),
+    data['push']['triggers'] = get_setting(
+        data['push'].get('triggers', [[]]),
         list(DEFAULT_PUSH_REGEXES),
         lambda x: (
             (isinstance(x[0], list) or isinstance(x[0], tuple)) and
@@ -222,14 +223,6 @@ def verify_settings():
             isinstance(x[0][1], str)
             )
         )
-    # data['spells']['use_log_streaming'] = get_setting(
-    #     data['spells'].get('use_log_streaming', False),
-    #     False
-    # )
-    # data['spells']['log_streaming_host'] = get_setting(
-    #     data['spells'].get('log_streaming_host', ""),
-    #     ""
-    # )
 
 
 def get_setting(setting, default, func=None):
