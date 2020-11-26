@@ -16,7 +16,7 @@ class Spells(ParserWindow):
 
     def __init__(self):
         super().__init__()
-        self.cvtrx = re.compile(r'ntimer ([A-Za-z0-9]+?) (\d{6}) is not online at this time')
+        self.cvtrx = re.compile(r'ntimer ([A-Za-z0-9_]+?) (\d{6}) is not online at this time')
         self.name = 'spells'
         self.setWindowTitle(self.name.title())
         self.set_title(self.name.title())
@@ -70,7 +70,7 @@ class Spells(ParserWindow):
             # custom variable timers
             cvt = self.cvtrx.match(text)
             if cvt and len(cvt.groups()) == 2:
-                name = cvt.groups()[0]
+                name = cvt.groups()[0].replace("_", " ")
                 ts = cvt.groups()[1]
                 ts = ts[0:2] + ":" + ts[2:4] + ":" + ts[4:6]
                 spell = Spell(
