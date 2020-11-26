@@ -11,6 +11,8 @@ DEFAULT_PUSH_REGEXES = (
         r'^You died\.'),
     ("Knocked unconscious",
         r'You have been knocked unconscious!'),
+    ("Charm Break!",
+        r'Your charm spell has worn off\.')
     ("/tell",
         r'^(?P<source>[\w]+) -> (?P<target>[\w]+): (?P<message>.*)$'),
     ("/say",
