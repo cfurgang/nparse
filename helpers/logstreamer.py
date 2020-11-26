@@ -27,16 +27,16 @@ class LogStreamer:
         if not config.data['push']['timer_expiry'] or not config.data['push']['push_enabled']:
             return
 
-        description = "Your timer for %s has expired." % spell.name
+        description = "Your timer for %s has expired." % spell.name.title()
         if spell.id != 0:
             if target == '__you__':
-                description = "Your cast of %s has faded on your character." % (spell.name)
+                description = "Your cast of %s has faded on your character." % (spell.name.title())
             else:
-                description = "Your cast of %s on %s has faded." % (spell.name, target)
+                description = "Your cast of %s on %s has faded." % (spell.name.title(), target)
 
         prowl = Prowl(config.data['push']['prowl_api_key'])
         prowl.notify(
-            event="%s Timer" % spell.name,
+            event="%s Timer" % spell.name.title(),
             description=description,
             priority=0,
             appName='EverQuest'
