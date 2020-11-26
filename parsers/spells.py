@@ -254,7 +254,7 @@ class SpellTarget(QFrame):
             target_type *= sw.spell.type
             if sw.spell.name == spell.name:
                 recast = True
-                sw.recast(timestamp)
+                sw.recast(timestamp, spell)
         if not recast:
             self.layout().addWidget(SpellWidget(spell, timestamp))
         if self.name == '__you__' or self.name == '__custom__':
@@ -321,7 +321,9 @@ class SpellWidget(QFrame):
         progress_layout.addWidget(self._time_label)
         layout.addWidget(self.progress, 1)
 
-    def recast(self, timestamp):
+    def recast(self, timestamp, spell=None):
+        if spell:
+            self.spell = spell
         self._calculate(timestamp)
         self.setProperty('Warning', False)
         self.setStyle(self.style())
