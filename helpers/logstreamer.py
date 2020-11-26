@@ -14,6 +14,8 @@ class LogStreamer:
         self.is_afk = False
 
     def is_idle_or_afk(self):
+        if not config.data['push']['push_enabled']:
+            return False
         idle_time = config.data['push']['idle_time_to_afk']
         if idle_time > 0:
             return self.is_afk or getIdleTime() > idle_time
