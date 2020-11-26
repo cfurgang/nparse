@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (QFrame, QHBoxLayout, QLabel, QProgressBar,
                              QScrollArea, QSpinBox, QVBoxLayout, QPushButton)
 
 from helpers import ParserWindow, config, format_time, text_time_to_seconds
+from helpers.logstreamer import LogStreamer
 
 
 class Spells(ParserWindow):
@@ -17,6 +18,8 @@ class Spells(ParserWindow):
     def __init__(self):
         super().__init__()
         self.cvtrx = re.compile(r'ntimer ([A-Za-z0-9_]+?) (\d{6}) is not online at this time')
+        self.logstreamer = LogStreamer()
+
         self.name = 'spells'
         self.setWindowTitle(self.name.title())
         self.set_title(self.name.title())
@@ -63,6 +66,10 @@ class Spells(ParserWindow):
 
     def parse(self, timestamp, text):
         """Parse casting triggers (casting, failure, success)."""
+
+        # caoilainn fork
+        # for push notifications and log streaming
+        self.logstreamer.stream(timestamp, text)
 
         # custom timers
         if config.data['spells']['use_custom_triggers']:
