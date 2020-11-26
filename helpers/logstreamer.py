@@ -21,7 +21,7 @@ class LogStreamer:
         return self.trigger_cache
 
     def get_character_names(self):
-        return list(map(lambda c: c.strip().lower(), config.data['spells']['character_names'].split(',')))
+        return ["you"] + list(map(lambda c: c.strip().lower(), config.data['spells']['character_names'].split(',')))
 
     def stream(self, timestamp, text):
         # Switch AFK on and off
