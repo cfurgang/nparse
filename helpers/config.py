@@ -199,15 +199,15 @@ def verify_settings():
     # log streaming
     data['push'] = data.get('push', {})
     data['push']['push_enabled'] = get_setting(
-        data['spells'].get('use_push_notifications', False),
+        data['push'].get('push_enabled', False),
         False
     )
     data['push']['afk_only'] = get_setting(
-        data['spells'].get('use_push_notifications_afk_only', True),
+        data['push'].get('afk_only', True),
         True
     )
     data['push']['prowl_api_key'] = get_setting(
-        data['spells'].get('prowl_api_key', ""),
+        data['push'].get('prowl_api_key', ""),
         ""
     )
     data['push']['character_names'] = get_setting(
