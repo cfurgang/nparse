@@ -196,13 +196,17 @@ class SettingsWindow(QDialog):
         push_enable.setObjectName('push:push_enabled')
         push.addRow('Use Push Notifications', push_enable)
 
-        push_afk_only = QCheckBox()
-        push_afk_only.setObjectName('push:afk_only')
-        push.addRow('Enable Triggers Only When AFK', push_afk_only)
-
         push_timer_expiry = QCheckBox()
         push_timer_expiry.setObjectName('push:timer_expiry')
         push.addRow('Push When Timer Expires', push_timer_expiry)
+
+        push_afk_only = QCheckBox()
+        push_afk_only.setObjectName('push:afk_only')
+        push.addRow('Triggers Only When AFK', push_afk_only)
+
+        push_timer_afk_only = QCheckBox()
+        push_timer_afk_only.setObjectName('push:timer_expiry_afk_only')
+        push.addRow('Timers Only When AFK', push_timer_afk_only)
 
         push_api_key = QLineEdit()
         push_api_key.setMaxLength(512)
