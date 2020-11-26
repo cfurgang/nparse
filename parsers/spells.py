@@ -16,6 +16,7 @@ class Spells(ParserWindow):
 
     def __init__(self):
         super().__init__()
+        self.cvtrx = re.compile(r'ntimer ([A-Za-z0-9]+?) (\d{6}) is not online at this time')
         self.name = 'spells'
         self.setWindowTitle(self.name.title())
         self.set_title(self.name.title())
@@ -65,6 +66,21 @@ class Spells(ParserWindow):
 
         # custom timers
         if config.data['spells']['use_custom_triggers']:
+            # caoilainn fork
+            # custom variable timers
+            cvt = self.cvtrx.match(text)
+            if cvt and len(cvt.groups()) == 2:
+                name = cvt.groups()[0]
+                ts = cvt.groups()[1]
+                ts = ts[0:2] + ":" + ts[2:4] + ":" + ts[4:6]
+                spell = Spell(
+                    name=name,
+                    duration=int(text_time_to_seconds(ts)/6),
+                    duration_formula=11,
+                    spell_icon=14
+                )
+                self._spell_container.add_spell(spell, timestamp, '__custom__')
+
             for rx, ct in self._custom_timers.items():
                 if rx.match(text):
                     spell = Spell(
