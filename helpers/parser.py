@@ -26,10 +26,6 @@ class ParserWindow(QFrame):
         self._title = QLabel()
         self._title.setObjectName('ParserWindowTitle')
 
-        self._afk_indicator = QLabel('')
-        self._afk_indicator.setObjectName("ParserWindowAFKIndicator")
-        self._afk_indicator.setAlignment(Qt.AlignCenter)
-
         button = QPushButton(u'\u2637')
         button.setObjectName('ParserWindowMoveButton')
         self._menu_content.addWidget(button, 0)
@@ -41,8 +37,6 @@ class ParserWindow(QFrame):
         menu_area.setLayout(self.menu_area)
         self._menu_content.addWidget(menu_area, 0)
         self._menu.setVisible(False)
-
-        self.content.addWidget(self._afk_indicator, 0)
 
         button.clicked.connect(self._toggle_frame)
 

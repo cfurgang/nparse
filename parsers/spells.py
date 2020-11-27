@@ -37,11 +37,17 @@ class Spells(ParserWindow):
 
     def _setup_ui(self):
         self.setMinimumWidth(150)
+
+        self._afk_indicator = QLabel('AFK')
+        self._afk_indicator.setObjectName("ParserWindowAFKIndicator")
+        self._afk_indicator.setAlignment(Qt.AlignCenter)
+
         self._spell_container = SpellContainer()
         self._scroll_area = QScrollArea()
         self._scroll_area.setWidgetResizable(True)
         self._scroll_area.setWidget(self._spell_container)
         self._scroll_area.setObjectName('SpellScrollArea')
+        self.content.addWidget(self._afk_indicator, 0)
         self.content.addWidget(self._scroll_area, 1)
         # self._custom_timer_toggle = QPushButton('\u26A1')
         # self._custom_timer_toggle.setCheckable(True)
@@ -63,9 +69,9 @@ class Spells(ParserWindow):
         self._level_widget.valueChanged.connect(self._level_change)
 
     def _update_afk(self):
-        text = 'AFK' if self.logstreamer.is_idle_or_afk() else ''
-        if text != self._afk_indicator.text():
-            self._afk_indicator.setText(text)
+        visible = self.logstreamer.is_idle_or_afk()
+        if visible != self._afk_indicator.isVisible():
+            self._afk_indicator.setVisible(visible)
         QTimer.singleShot(1000, self._update_afk)
 
     def _spell_triggered(self):
