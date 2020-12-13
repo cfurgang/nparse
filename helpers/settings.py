@@ -354,6 +354,10 @@ class CustomTriggerSettings(QDialog):
         self._trigger_time.setText("hh:mm:ss")
         trigger_layout.addRow('Time', self._trigger_time)
 
+        self._trigger_on_you = QCheckBox()
+        self._trigger_on_you.setChecked(False)
+        trigger_layout.addRow('Pauses When Camped', self._trigger_on_you)
+
         layout.addItem(trigger_layout)
 
         layout.addWidget(QWidget(), 1)  # spacer
@@ -379,6 +383,7 @@ class CustomTriggerSettings(QDialog):
             self._trigger_name.setText(ct.name)
             self._trigger_text.setText(ct.text)
             self._trigger_time.setText(ct.time)
+            self._trigger_on_you.setChecked(ct.on_you)
             self._current_trigger = self._triggers.currentText()
         else:
             self._current_trigger = None
@@ -430,13 +435,15 @@ class CustomTriggerSettings(QDialog):
                     ct.name = self._trigger_name.text()
                     ct.text = self._trigger_text.text()
                     ct.time = self._trigger_time.text()
+                    ct.on_you = self._trigger_on_you.isChecked()
                     self._custom_triggers[ct.name] = ct
                 elif self._current_trigger == '':
                     # new trigger
                     ct = CustomTrigger(
                         self._trigger_name.text(),
                         self._trigger_text.text(),
-                        self._trigger_time.text()
+                        self._trigger_time.text(),
+                        False
                     )
                     self._custom_triggers[ct.name] = ct
                 else:
@@ -444,6 +451,7 @@ class CustomTriggerSettings(QDialog):
                     ct = self._custom_triggers[self._current_trigger]
                     ct.text = self._trigger_text.text()
                     ct.time = self._trigger_time.text()
+                    ct.on_you = self._trigger_on_you.isChecked()
                     self._custom_triggers[self._current_trigger] = ct
                 
                 # save and reload
@@ -464,6 +472,7 @@ class CustomTriggerSettings(QDialog):
             self._trigger_name.setText(self._custom_triggers[name].name)
             self._trigger_text.setText(self._custom_triggers[name].text)
             self._trigger_time.setText(self._custom_triggers[name].time)
+            self._trigger_on_you.setChecked(self._custom_triggers[name].on_you)
         else:
             self._clear()
     
@@ -471,6 +480,7 @@ class CustomTriggerSettings(QDialog):
         self._trigger_name.clear()
         self._trigger_text.clear()
         self._trigger_time.clear()
+        self._trigger_on_you.setChecked(False)
 
     def _close(self, _):
         self._save_to_config()

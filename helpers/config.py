@@ -145,12 +145,13 @@ def verify_settings():
         )
     data['spells']['custom_timers'] = get_setting(
         data['spells'].get('custom_timers', [[]]),
-        [["Journeyman Boots", "Your feet feel quick.", "00:18:00"]],
+        [["Journeyman Boots", "Your feet feel quick.", "00:18:00", True]],
         lambda x: (
             isinstance(x[0], list) and
             isinstance(x[0][0], str) and
             isinstance(x[0][1], str) and
-            isinstance(x[0][2], str)
+            isinstance(x[0][2], str) and
+            isinstance(x[0][3], bool)
             )
         )
     data['spells']['delay_self_buffs_on_zone'] = get_setting(

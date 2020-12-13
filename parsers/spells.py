@@ -174,7 +174,8 @@ class Spells(ParserWindow):
                     name=name,
                     duration=int(text_time_to_seconds(ts)/6),
                     duration_formula=11,
-                    spell_icon=14
+                    spell_icon=14,
+                    pauses_on_camp=False
                 )
                 self._spell_container.add_spell(spell, timestamp, '__custom__')
 
@@ -184,7 +185,8 @@ class Spells(ParserWindow):
                         name=ct.name,
                         duration=int(text_time_to_seconds(ct.time)/6),
                         duration_formula=11,  # honour duration ticks
-                        spell_icon=14
+                        spell_icon=14,
+                        pauses_on_camp=ct.on_you
                     )
                     self._spell_container.add_spell(
                         spell,
@@ -271,6 +273,11 @@ class Spells(ParserWindow):
         if target:
             for widget in target.spell_widgets():
                 widget.pause()
+        target = self._spell_container.get_spell_target_by_name('__custom__')
+        if target:
+            for widget in target.spell_widgets():
+                if widget.spell.pauses_on_camp:
+                    widget.pause()
         self._paused = timestamp
 
     def resume(self, timestamp=datetime.datetime.now()):
@@ -280,26 +287,52 @@ class Spells(ParserWindow):
         if target:
             for widget in target.spell_widgets():
                 widget.resume()
+        target = self._spell_container.get_spell_target_by_name('__custom__')
+        if target:
+            for widget in target.spell_widgets():
+                if widget.spell.pauses_on_camp:
+                    widget.resume()
         self._paused = None
 
     def load_all(self, serialized):
         ts = datetime.datetime.now()
-        spells = serialized.get('__you__', {})
+
+        # Remove all spells on __you__
         target = self._spell_container.get_spell_target_by_name('__you__')
         if target:
             for widget in target.spell_widgets():
                 widget._remove()
-        for spell in spells:
-            spell = Spell(**spell)
-            self._spell_container.add_spell(spell, ts, '__you__')
+
+        # Remove all custom timers that pause when camped
+        target = self._spell_container.get_spell_target_by_name('__custom__')
+        if target:
+            for widget in target.spell_widgets():
+                if widget.spell.pauses_on_camp:
+                    widget._remove()
+
+        # Load up the timers
+        for target, spells in serialized.items():
+            for spell in spells:
+                spell = Spell(**spell)
+                self._spell_container.add_spell(spell, ts, target)
 
     def serialize_all(self):
         targets = {}
+        # Collect all spells from __you__
         target = self._spell_container.get_spell_target_by_name('__you__')
         if target:
             spells = []
             for widget in target.spell_widgets():
                 spells.append(widget.serialize_spell())
+            targets[target.name] = spells
+
+        # Collect all spells that are marked as pauses_on_camp (custom timers that are on_you)
+        target = self._spell_container.get_spell_target_by_name('__custom__')
+        if target:
+            spells = []
+            for widget in target.spell_widgets():
+                if widget.spell.pauses_on_camp:
+                    spells.append(widget.serialize_spell())
             targets[target.name] = spells
         return targets
 
@@ -552,6 +585,7 @@ class Spell:
         self.pvp_duration = 0
         self.type = 0
         self.spell_icon = 0
+        self.pauses_on_camp = False
         self.__dict__.update(kwargs)
 
 
@@ -713,13 +747,13 @@ def get_spell_duration(spell, level):
 
 class CustomTrigger:
 
-    def __init__(self, name='', text='', time='', **kwargs):
-        self.name, self.text, self.time = name, text, time
+    def __init__(self, name='', text='', time='', on_you=False, **kwargs):
+        self.name, self.text, self.time, self.on_you = name, text, time, on_you
 
     def to_list(self):
-        return [self.name, self.text, self.time]
+        return [self.name, self.text, self.time, self.on_you]
     
     def __str__(self):
-        return '{},{},{}'.format(
-            self.name, self.text, self.time
+        return '{},{},{},{}'.format(
+            self.name, self.text, self.time, str(self.on_you)
         )
