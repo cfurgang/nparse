@@ -29,9 +29,9 @@ class Spells(ParserWindow):
         self.spell_book = create_spell_book()
         self._custom_timers = {}  # regex : CustomTimer
         self.load_custom_timers()
-        self._camped = None
         self._casting = None  # holds Spell when casting
         self._zoning = None  # holds time of zone or None
+        self._paused = None
         self._spell_triggers = []  # need a queue because of landing windows
         self._spell_trigger = None
         self._update_afk()
@@ -85,19 +85,19 @@ class Spells(ParserWindow):
         self._level_widget.valueChanged.connect(self._level_change)
 
     def _update_afk(self):
-        afk_visible = self.logstreamer.is_idle_or_afk()
-        camp_visible = not self.isInGame()
-        if afk_visible == LogStreamer.PRESENT:
-            self._afk_indicator.setVisible(False)
-            self._idle_indicator.setVisible(False)
-        elif afk_visible == LogStreamer.AFK:
-            self._afk_indicator.setVisible(True)
-            self._idle_indicator.setVisible(False)
-        elif afk_visible == LogStreamer.IDLE:
-            self._afk_indicator.setVisible(False)
-            self._idle_indicator.setVisible(True)
-        if camp_visible != self._camp_indicator.isVisible():
-            self._camp_indicator.setVisible(camp_visible)
+        afk_visible = self.logstreamer.isAFK()
+        idle_visible = self.logstreamer.isIdle()
+        camp_visible = not self.logstreamer.isUserPlayingEQ()
+
+        self._afk_indicator.setVisible(afk_visible)
+        self._idle_indicator.setVisible(idle_visible)
+        self._camp_indicator.setVisible(camp_visible)
+
+        if self.logstreamer.isUserPlayingEQ():
+            self.resume()
+        else:
+            self.pause()
+
         QTimer.singleShot(1000, self._update_afk)
 
     def _spell_triggered(self):
@@ -190,17 +190,6 @@ class Spells(ParserWindow):
                 for spell_widget in spell_target.spell_widgets():
                     spell_widget.elongate(delay)
                     spell_widget.resume()
-        elif text[:20] == "Welcome to EverQuest":
-            self._camped = None
-        elif text[:54] == "It will take about 5 more seconds to prepare your camp":
-            self._camped = datetime.datetime.now() + datetime.timedelta(seconds=5)
-        elif text[:37] == "You abandon your preparations to camp":
-            self._camped = None
-
-    def isInGame(self):
-        if self._camped is None:
-            return True
-        return datetime.datetime.now() <= self._camped
 
     def _remove_spell_trigger(self):
         if self._spell_trigger:
@@ -231,6 +220,29 @@ class Spells(ParserWindow):
         config.data['push']['push_enabled'] = \
             self._push_toggle.isChecked()
         config.save()
+
+    def pause(self, timestamp=datetime.datetime.now()):
+        if self._paused:
+            return
+        print("Pausing spells")
+        target = self._spell_container.get_spell_target_by_name('__you__')
+        if target:
+            for widget in target.spell_widgets():
+                widget.pause()
+        self._paused = timestamp
+
+    def resume(self, timestamp=datetime.datetime.now()):
+        if not self._paused:
+            return
+        print("Resuming spells")
+        delay = (timestamp - self._paused).total_seconds()
+        target = self._spell_container.get_spell_target_by_name('__you__')
+        if target:
+            for widget in target.spell_widgets():
+                widget.elongate(delay)
+                widget.resume()
+        self._paused = None
+
 
 
 class SpellContainer(QFrame):
@@ -413,7 +425,7 @@ class SpellWidget(QFrame):
                 target = self.parentWidget()
                 spells = self.parentWidget().parentWidget().parentWidget().parentWidget().parentWidget()
                 if isinstance(spells, Spells) and isinstance(target, SpellTarget):
-                    spells.logstreamer.handle_timer_expiry(self.spell, target.name)
+                    spells.logstreamer._handleTimerExpiry(self.spell, target.name)
                 self._remove()
             self._time_label.setText(format_time(remaining))
         QTimer.singleShot(1000, self._update)

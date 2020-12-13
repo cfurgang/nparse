@@ -1,5 +1,6 @@
 
 import re
+from datetime import datetime, timedelta
 from helpers.logregex import AFK_ON_REGEX, AFK_OFF_REGEX
 from pyprowl import Prowl
 from helpers import config
@@ -8,45 +9,62 @@ from helpers.win32 import getIdleTime
 
 class LogStreamer:
 
-    PRESENT = False
-    IDLE = 1
-    AFK = 2
-
     def __init__(self):
         self.trigger_cache = None
         self.trigger_cache_hash = None
         self.is_afk = False
+        self.camp_time = None
 
-    def is_idle_or_afk(self):
-        if not config.data['push']['push_enabled']:
+    def shouldPushTriggerNotifications(self):
+        push_enabled = config.data['push']['push_enabled']
+        afk_only = config.data['push']['afk_only']
+        if not push_enabled:
             return False
+        if afk_only:
+            return self.isUserPlayingEQ() and (self.isAFK() or self.isIdle())
+        else:
+            return self.isUserPlayingEQ()
+
+    def shouldPushTimerNotifications(self):
+        push_enabled = config.data['push']['push_enabled'] and config.data['push']['timer_expiry']
+        afk_only = config.data['push']['timer_expiry_afk_only']
+        if not push_enabled:
+            return False
+        if afk_only:
+            return self.isUserPlayingEQ() and (self.isAFK() or self.isIdle())
+        else:
+            return self.isUserPlayingEQ()
+
+    def isAFK(self):
+        return self.is_afk
+
+    def isIdle(self):
         idle_time = config.data['push']['idle_time_to_afk']
         if idle_time > 0:
-            if self.is_afk:
-                return self.AFK
-            elif getIdleTime() > idle_time:
-                return self.IDLE
-            else:
-                return self.PRESENT
+            return getIdleTime() > idle_time
         else:
-            return self.AFK if self.is_afk else self.PRESENT
+            return False
 
-    def get_regex_triggers(self):
-        cfg = tuple([tuple(l) for l in config.data['push']['triggers']])
+    def isUserPlayingEQ(self):
+        if self.camp_time:
+            return self.camp_time > datetime.now()
+        else:
+            return True
+
+    def getRegularExpressionTriggers(self):
+        cfg = tuple([tuple(trigger_list) for trigger_list in config.data['push']['triggers']])
         cfghash = hash(cfg)
         if self.trigger_cache_hash != cfghash:
             self.trigger_cache_hash = cfghash
-            self._compile_triggers()
+            self._compileTriggers()
         return self.trigger_cache
 
-    def get_character_names(self):
+    def getAllCharacterNames(self):
         return ["you"] + list(map(lambda c: c.strip().lower(), config.data['push']['character_names'].split(',')))
 
-    def handle_timer_expiry(self, spell, target):
-        if not config.data['push']['timer_expiry'] or not config.data['push']['push_enabled']:
-            return
+    def _handleTimerExpiry(self, spell, target):
 
-        if config.data['push']['timer_expiry_afk_only'] and not self.is_idle_or_afk():
+        if not self.shouldPushTimerNotifications():
             return
 
         title = spell.name.title()
@@ -72,10 +90,8 @@ class LogStreamer:
         # Switch AFK on and off
         if AFK_ON_REGEX.match(text):
             self.is_afk = True
-            print("DEBUG: %s" % text)
             return
         elif AFK_OFF_REGEX.match(text):
-            print("DEBUG: %s" % text)
             self.is_afk = False
             return
 
@@ -83,19 +99,27 @@ class LogStreamer:
         if config.data['push']['push_enabled'] is False:
             return
 
+        # Detect when you are camped / in-game
+        if text[:20] == "Welcome to EverQuest":
+            self.camp_time = None
+        elif text[:54] == "It will take about 5 more seconds to prepare your camp":
+            self.camp_time = datetime.now() + timedelta(seconds=5)
+        elif text[:37] == "You abandon your preparations to camp":
+            self.camp_time = None
+
         # Detect triggers
-        for name, trigger in self.get_regex_triggers():
+        for name, trigger in self.getRegularExpressionTriggers():
             match = trigger.match(text)
             if match:
                 if len(config.data['push']['prowl_api_key']) == 0:
                     print("LogStreamer ERROR: No API key supplied")
                     continue
-                if not self.is_idle_or_afk() and config.data['push']['afk_only']:
-                    print("DEBUG: Skipping %s because you are not AFK." % name)
+
+                if not self.shouldPushTriggerNotifications():
                     continue
 
                 source = match.groupdict().get('source', None)
-                if source and source.strip().lower() in self.get_character_names():
+                if source and source.strip().lower() in self.getAllCharacterNames():
                     print("DEBUG: Skipping %s because source is player's character")
                     continue
 
@@ -108,7 +132,7 @@ class LogStreamer:
                     appName='EverQuest'
                 )
 
-    def _compile_triggers(self):
+    def _compileTriggers(self):
         self.trigger_cache = []
         for name, regex in config.data['push']['triggers']:
             self.trigger_cache.append(
