@@ -117,7 +117,7 @@ class Spells(ParserWindow):
         if charname and self.character_name != charname:
             serialized = {}
             try:
-                print("DEBUG: Loading spell save file for %s" % charname)
+                # print("DEBUG: Loading spell save file for %s" % charname)
                 with open(fn, 'r') as fh:
                     serialized = json.loads(fh.read()).get('spells', {})
             except Exception:
@@ -135,7 +135,7 @@ class Spells(ParserWindow):
 
         if self.saved_spell_counter % 6 == 0:
             try:
-                print("DEBUG: Writing spell save file for %s" % self.character_name)
+                # print("DEBUG: Writing spell save file for %s" % self.character_name)
                 fn = 'nparse_spelldat_%s.json' % self.character_name
                 with open(fn, 'w') as fh:
                     data = json.dumps({
@@ -281,15 +281,14 @@ class Spells(ParserWindow):
 
     def load_all(self, serialized):
         ts = datetime.datetime.now()
-        for starget in serialized.keys():
-            spells = serialized[starget]
-            target = self._spell_container.get_spell_target_by_name(starget)
-            if target:
-                for widget in target.spell_widgets():
-                    widget._remove()
-            for spell in spells:
-                spell = Spell(**spell)
-                self._spell_container.add_spell(spell, ts, starget)
+        spells = serialized.get('__you__', {})
+        target = self._spell_container.get_spell_target_by_name('__you__')
+        if target:
+            for widget in target.spell_widgets():
+                widget._remove()
+        for spell in spells:
+            spell = Spell(**spell)
+            self._spell_container.add_spell(spell, ts, '__you__')
 
     def serialize_all(self):
         targets = {}
