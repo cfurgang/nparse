@@ -92,6 +92,7 @@ class Spells(ParserWindow):
         self._afk_indicator.setVisible(afk_visible)
         self._idle_indicator.setVisible(idle_visible)
         self._camp_indicator.setVisible(camp_visible)
+        self._afk_frame.setVisible(afk_visible or idle_visible or camp_visible)
 
         if self.logstreamer.isUserPlayingEQ():
             self.resume()
