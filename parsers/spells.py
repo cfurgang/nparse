@@ -110,19 +110,23 @@ class Spells(ParserWindow):
         QTimer.singleShot(1000, self._update)
 
     def updateCharacterName(self, charname):
-        if not config.data['spells']['save_spells'] or charname is None:
+        if not config.data['spells']['save_spells']:
             return
 
         fn = 'nparse_spelldat_%s.json' % charname
-        if self.character_name != charname and os.path.exists(fn):
-            print("DEBUG: Loading spell save file for %s" % charname)
-            with open(fn, 'r') as fh:
-                serialized = json.loads(fh.read()).get('spells', {})
-                self.load_all(serialized)
+        if charname and self.character_name != charname:
+            serialized = {}
+            try:
+                print("DEBUG: Loading spell save file for %s" % charname)
+                with open(fn, 'r') as fh:
+                    serialized = json.loads(fh.read()).get('spells', {})
+            except Exception:
+                pass
+            self.load_all(serialized)
         self.character_name = charname
 
     def updateCharacterSpellState(self):
-        if not config.data['spells']['save_spells'] or self.character_name is None:
+        if not config.data['spells']['save_spells'] or self.character_name is None or not self.logstreamer.isUserPlayingEQ():
             return
 
         if self.saved_spell_counter == 600:
@@ -130,13 +134,16 @@ class Spells(ParserWindow):
         self.saved_spell_counter += 1
 
         if self.saved_spell_counter % 6 == 0:
-            print("DEBUG: Writing spell save file for %s" % self.character_name)
-            fn = 'nparse_spelldat_%s.json' % self.character_name
-            with open(fn, 'w') as fh:
-                data = json.dumps({
-                    'spells': self.serialize_all(),
-                })
-                fh.write(data)
+            try:
+                print("DEBUG: Writing spell save file for %s" % self.character_name)
+                fn = 'nparse_spelldat_%s.json' % self.character_name
+                with open(fn, 'w') as fh:
+                    data = json.dumps({
+                        'spells': self.serialize_all(),
+                    })
+                    fh.write(data)
+            except Exception:
+                pass
 
     def _spell_triggered(self):
         """SpellTrigger spell_triggered event handler. """
@@ -149,9 +156,7 @@ class Spells(ParserWindow):
 
     def parse(self, timestamp, text, charname):
         """Parse casting triggers (casting, failure, success)."""
-
         self.updateCharacterName(charname)
-
         self.logstreamer.setCharacterName(charname)
         self.logstreamer.stream(timestamp, text)
 
