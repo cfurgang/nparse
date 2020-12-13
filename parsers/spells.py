@@ -225,7 +225,6 @@ class Spells(ParserWindow):
     def pause(self, timestamp=datetime.datetime.now()):
         if self._paused:
             return
-        print("Pausing spells")
         target = self._spell_container.get_spell_target_by_name('__you__')
         if target:
             for widget in target.spell_widgets():
@@ -235,7 +234,6 @@ class Spells(ParserWindow):
     def resume(self, timestamp=datetime.datetime.now()):
         if not self._paused:
             return
-        print("Resuming spells")
         delay = (timestamp - self._paused).total_seconds()
         target = self._spell_container.get_spell_target_by_name('__you__')
         if target:
@@ -438,7 +436,7 @@ class SpellWidget(QFrame):
         self._active = True
 
     def elongate(self, seconds):
-        self.end_time += datetime.timedelta(seconds=seconds)
+        self.end_time += datetime.timedelta(seconds=abs(seconds))
 
     def _remove(self):
         self.setParent(None)
