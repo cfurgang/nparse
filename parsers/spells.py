@@ -134,11 +134,13 @@ class Spells(ParserWindow):
         if not config.data['spells']['save_spells'] or self.character_name is None or not self.logstreamer.isUserPlayingEQ():
             return
 
+        UPDATE_EVERY_N_SECONDS = 1
+
         if self.saved_spell_counter == 600:
             self.saved_spell_counter = 0
         self.saved_spell_counter += 1
 
-        if self.saved_spell_counter % 6 == 0:
+        if self.saved_spell_counter % UPDATE_EVERY_N_SECONDS == 0:
             try:
                 # print("DEBUG: Writing spell save file for %s" % self.character_name)
                 fn = 'nparse_spelldat_%s.json' % self.character_name
