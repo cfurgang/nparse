@@ -438,11 +438,16 @@ class SpellWidget(QFrame):
         self._update()
 
     def _calculate(self, timestamp):
-        self._ticks = get_spell_duration(
-            self.spell, config.data['spells']['level'])
+        ticks = get_spell_duration(self.spell, config.data['spells']['level'])
+        total_duration = ticks
+        if hasattr(self.spell, 'serialized_remaining_seconds'):
+            self._ticks = ticks
+            delattr(self.spell, 'serialized_remaining_seconds')
+            total_duration = get_spell_duration(self.spell, config.data['spells']['level'])
+        self._ticks = ticks
         self._seconds = (int(self._ticks * 6))
         self.end_time = timestamp + datetime.timedelta(seconds=self._seconds)
-        self.progress.setMaximum(self._seconds)
+        self.progress.setMaximum(int(total_duration * 6))
 
     def _setup_ui(self):
         # self
