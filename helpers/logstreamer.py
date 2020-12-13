@@ -14,6 +14,7 @@ class LogStreamer:
         self.trigger_cache_hash = None
         self.is_afk = False
         self.camp_time = None
+        self.character_name = None
 
     def shouldPushTriggerNotifications(self):
         push_enabled = config.data['push']['push_enabled']
@@ -51,6 +52,9 @@ class LogStreamer:
         else:
             return True
 
+    def setCharacterName(self, charname):
+        self.character_name = charname
+
     def getRegularExpressionTriggers(self):
         cfg = tuple([tuple(trigger_list) for trigger_list in config.data['push']['triggers']])
         cfghash = hash(cfg)
@@ -58,9 +62,6 @@ class LogStreamer:
             self.trigger_cache_hash = cfghash
             self._compileTriggers()
         return self.trigger_cache
-
-    def getAllCharacterNames(self):
-        return ["you"] + list(map(lambda c: c.strip().lower(), config.data['push']['character_names'].split(',')))
 
     def _handleTimerExpiry(self, spell, target):
 
@@ -119,7 +120,7 @@ class LogStreamer:
                     continue
 
                 source = match.groupdict().get('source', None)
-                if source and source.strip().lower() in self.getAllCharacterNames():
+                if source and self.character_name and source.strip().lower() in self.character_name:
                     print("DEBUG: Skipping %s because source is player's character")
                     continue
 

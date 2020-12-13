@@ -194,6 +194,10 @@ def verify_settings():
         data['spells'].get('use_secondary_all', False),
         False
         )
+    data['spells']['save_spells'] = get_setting(
+        data['spells'].get('save_spells', False),
+        False
+        )
 
     # caoilainn fork
     # log streaming
@@ -216,10 +220,6 @@ def verify_settings():
     )
     data['push']['prowl_api_key'] = get_setting(
         data['push'].get('prowl_api_key', ""),
-        ""
-    )
-    data['push']['character_names'] = get_setting(
-        data['push'].get('character_names', ""),
         ""
     )
     data['push']['idle_time_to_afk'] = get_setting(

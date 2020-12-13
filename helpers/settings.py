@@ -184,6 +184,9 @@ class SettingsWindow(QDialog):
         ssl_secondary_duration.setWhatsThis(WHATS_THIS_PVP_DURATION)
         ssl_secondary_duration.setObjectName('spells:use_secondary_all')
         ssl.addRow('Use PvP Durations', ssl_secondary_duration)
+        ssl_save_spells = QCheckBox()
+        ssl_save_spells.setObjectName('spells:save_spells')
+        ssl.addRow('Save Spells Between Sessions', ssl_save_spells)
         spells_settings.setLayout(ssl)
         stacked_widgets.append(('Spells', spells_settings))
 
@@ -223,11 +226,6 @@ class SettingsWindow(QDialog):
         push_api_key.setMaxLength(512)
         push_api_key.setObjectName('push:prowl_api_key')
         push.addRow('Prowl API Key', push_api_key)
-
-        push_character_names = QLineEdit()
-        push_character_names.setMaxLength(512)
-        push_character_names.setObjectName('push:character_names')
-        push.addRow('Character Names\n(comma separated)', push_character_names)
 
         push_edit_triggers = QPushButton("Edit")
         push_edit_triggers.clicked.connect(self._get_push_triggers)

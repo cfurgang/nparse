@@ -2,6 +2,8 @@ import datetime
 import math
 import string
 import re
+import os
+import json
 
 from PyQt5.QtCore import QEvent, QObject, QRect, Qt, QTimer, pyqtSignal
 from PyQt5.QtGui import QPixmap
@@ -26,6 +28,9 @@ class Spells(ParserWindow):
 
         self._setup_ui()
 
+        self.character_name = None
+        self.saved_spell_counter = 0
+
         self.spell_book = create_spell_book()
         self._custom_timers = {}  # regex : CustomTimer
         self.load_custom_timers()
@@ -34,7 +39,7 @@ class Spells(ParserWindow):
         self._paused = None
         self._spell_triggers = []  # need a queue because of landing windows
         self._spell_trigger = None
-        self._update_afk()
+        self._update()
 
     def _setup_ui(self):
         self.setMinimumWidth(150)
@@ -84,7 +89,7 @@ class Spells(ParserWindow):
         self.menu_area.addWidget(self._level_widget, 0)
         self._level_widget.valueChanged.connect(self._level_change)
 
-    def _update_afk(self):
+    def _update(self):
         afk_visible = self.logstreamer.isAFK()
         idle_visible = self.logstreamer.isIdle()
         camp_visible = not self.logstreamer.isUserPlayingEQ()
@@ -99,7 +104,37 @@ class Spells(ParserWindow):
         else:
             self.pause()
 
-        QTimer.singleShot(1000, self._update_afk)
+        self.updateCharacterSpellState()
+        QTimer.singleShot(1000, self._update)
+
+    def updateCharacterName(self, charname):
+        if not config.data['spells']['save_spells'] or charname is None:
+            return
+
+        fn = 'nparse_spelldat_%s.json' % charname
+        if self.character_name != charname and os.path.exists(fn):
+            print("DEBUG: Loading spell save file for %s" % charname)
+            with open(fn, 'r') as fh:
+                serialized = json.loads(fh.read()).get('spells', {})
+                self.load_all(serialized)
+        self.character_name = charname
+
+    def updateCharacterSpellState(self):
+        if not config.data['spells']['save_spells'] or self.character_name is None:
+            return
+
+        if self.saved_spell_counter == 600:
+            self.saved_spell_counter = 0
+        self.saved_spell_counter += 1
+
+        if self.saved_spell_counter % 6 == 0:
+            print("DEBUG: Writing spell save file for %s" % self.character_name)
+            fn = 'nparse_spelldat_%s.json' % self.character_name
+            with open(fn, 'w') as fh:
+                data = json.dumps({
+                    'spells': self.serialize_all(),
+                })
+                fh.write(data)
 
     def _spell_triggered(self):
         """SpellTrigger spell_triggered event handler. """
@@ -113,14 +148,13 @@ class Spells(ParserWindow):
     def parse(self, timestamp, text, charname):
         """Parse casting triggers (casting, failure, success)."""
 
-        # caoilainn fork
-        # for push notifications and log streaming
+        self.updateCharacterName(charname)
+
+        self.logstreamer.setCharacterName(charname)
         self.logstreamer.stream(timestamp, text)
 
         # custom timers
         if config.data['spells']['use_custom_triggers']:
-            # caoilainn fork
-            # custom variable timers
             cvt = self.cvtrx.match(text)
             if cvt and len(cvt.groups()) == 2:
                 name = cvt.groups()[0].replace("_", " ")
@@ -232,12 +266,33 @@ class Spells(ParserWindow):
     def resume(self, timestamp=datetime.datetime.now()):
         if not self._paused:
             return
-        delay = (timestamp - self._paused).total_seconds()
         target = self._spell_container.get_spell_target_by_name('__you__')
         if target:
             for widget in target.spell_widgets():
                 widget.resume()
         self._paused = None
+
+    def load_all(self, serialized):
+        ts = datetime.datetime.now()
+        for starget in serialized.keys():
+            spells = serialized[starget]
+            target = self._spell_container.get_spell_target_by_name(starget)
+            if target:
+                for widget in target.spell_widgets():
+                    widget._remove()
+            for spell in spells:
+                spell = Spell(**spell)
+                self._spell_container.add_spell(spell, ts, starget)
+
+    def serialize_all(self):
+        targets = {}
+        target = self._spell_container.get_spell_target_by_name('__you__')
+        if target:
+            spells = []
+            for widget in target.spell_widgets():
+                spells.append(widget.serialize_spell())
+            targets[target.name] = spells
+        return targets
 
 
 
@@ -408,6 +463,8 @@ class SpellWidget(QFrame):
         self._time_label.setStyle(self._time_label.style())
 
     def _update(self):
+        if self.parentWidget() is None:
+            return
         if self._active:
             remaining = self.end_time - datetime.datetime.now()
             remaining_seconds = remaining.total_seconds()
@@ -426,6 +483,10 @@ class SpellWidget(QFrame):
                 self._remove()
             self._time_label.setText(format_time(remaining))
         QTimer.singleShot(1000, self._update)
+
+    def serialize_spell(self):
+        self.spell.serialized_remaining_seconds = (self.end_time - datetime.datetime.now()).total_seconds()
+        return self.spell.__dict__
 
     def pause(self):
         self._remaining_seconds = (self.end_time - datetime.datetime.now()).total_seconds()
@@ -568,6 +629,10 @@ def create_spell_book():
 
 
 def get_spell_duration(spell, level):
+
+    if hasattr(spell, 'serialized_remaining_seconds'):
+        return (spell.serialized_remaining_seconds / 6)
+
     if spell.name in config.data['spells']['use_secondary']:
         formula, duration = spell.pvp_duration_formula, spell.pvp_duration
     elif config.data['spells']['use_secondary_all'] and spell.type == 0:
