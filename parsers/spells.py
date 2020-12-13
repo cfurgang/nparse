@@ -5,6 +5,8 @@ import re
 import os
 import json
 
+from copy import deepcopy
+
 from PyQt5.QtCore import QEvent, QObject, QRect, Qt, QTimer, pyqtSignal
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import (QFrame, QHBoxLayout, QLabel, QProgressBar,
@@ -463,8 +465,6 @@ class SpellWidget(QFrame):
         self._time_label.setStyle(self._time_label.style())
 
     def _update(self):
-        if self.parentWidget() is None:
-            return
         if self._active:
             remaining = self.end_time - datetime.datetime.now()
             remaining_seconds = remaining.total_seconds()
@@ -485,8 +485,9 @@ class SpellWidget(QFrame):
         QTimer.singleShot(1000, self._update)
 
     def serialize_spell(self):
-        self.spell.serialized_remaining_seconds = (self.end_time - datetime.datetime.now()).total_seconds()
-        return self.spell.__dict__
+        spell = deepcopy(self.spell.__dict__)
+        spell['serialized_remaining_seconds'] = (self.end_time - datetime.datetime.now()).total_seconds()
+        return spell
 
     def pause(self):
         self._remaining_seconds = (self.end_time - datetime.datetime.now()).total_seconds()
