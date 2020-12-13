@@ -122,6 +122,7 @@ class Spells(ParserWindow):
                     serialized = json.loads(fh.read()).get('spells', {})
             except Exception:
                 pass
+            print("** Updating character from %s to %s" % (str(self.character_name), charname))
             self.character_name = charname
             self.load_all(serialized)
         self.character_name = charname
@@ -160,9 +161,9 @@ class Spells(ParserWindow):
 
     def parse(self, timestamp, text, charname):
         """Parse casting triggers (casting, failure, success)."""
-        self.updateCharacterName(charname)
         self.logstreamer.setCharacterName(charname)
         self.logstreamer.stream(timestamp, text)
+        self.updateCharacterName(charname)
 
         # custom timers
         if config.data['spells']['use_custom_triggers']:
@@ -426,7 +427,7 @@ class SpellWidget(QFrame):
         self.setObjectName('SpellWidget')
         self.spell = spell
         self._active = True
-        self._remaining_seconds = 0
+        self._remaining_seconds = None
 
         self._setup_ui()
         self._calculate(timestamp)
@@ -506,13 +507,15 @@ class SpellWidget(QFrame):
         return spell
 
     def pause(self):
-        self._remaining_seconds = (self.end_time - datetime.datetime.now()).total_seconds()
+        if self._remaining_seconds is None:
+            self._remaining_seconds = (self.end_time - datetime.datetime.now()).total_seconds()
         self._active = False
 
     def resume(self):
-        self.end_time = datetime.datetime.now() + datetime.timedelta(seconds=self._remaining_seconds)
+        if self._remaining_seconds:
+            self.end_time = datetime.datetime.now() + datetime.timedelta(seconds=self._remaining_seconds)
+            self._remaining_seconds = None
         self._active = True
-        self._remaining_seconds = 0
 
     def _remove(self):
         self.setParent(None)
