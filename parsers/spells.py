@@ -122,6 +122,7 @@ class Spells(ParserWindow):
                     serialized = json.loads(fh.read()).get('spells', {})
             except Exception:
                 pass
+            self.character_name = charname
             self.load_all(serialized)
         self.character_name = charname
         target = self._spell_container.get_spell_target_by_name('__you__')
@@ -174,8 +175,7 @@ class Spells(ParserWindow):
                     name=name,
                     duration=int(text_time_to_seconds(ts)/6),
                     duration_formula=11,
-                    spell_icon=14,
-                    pauses_on_camp=False
+                    spell_icon=14
                 )
                 self._spell_container.add_spell(spell, timestamp, '__custom__')
 
@@ -185,13 +185,12 @@ class Spells(ParserWindow):
                         name=ct.name,
                         duration=int(text_time_to_seconds(ct.time)/6),
                         duration_formula=11,  # honour duration ticks
-                        spell_icon=14,
-                        pauses_on_camp=ct.on_you
+                        spell_icon=14
                     )
                     self._spell_container.add_spell(
                         spell,
                         timestamp,
-                        '__custom__'
+                        '__you__' if ct.on_you else '__custom__'
                     )
 
         if self._spell_trigger:
@@ -273,11 +272,6 @@ class Spells(ParserWindow):
         if target:
             for widget in target.spell_widgets():
                 widget.pause()
-        target = self._spell_container.get_spell_target_by_name('__custom__')
-        if target:
-            for widget in target.spell_widgets():
-                if widget.spell.pauses_on_camp:
-                    widget.pause()
         self._paused = timestamp
 
     def resume(self, timestamp=datetime.datetime.now()):
@@ -287,11 +281,6 @@ class Spells(ParserWindow):
         if target:
             for widget in target.spell_widgets():
                 widget.resume()
-        target = self._spell_container.get_spell_target_by_name('__custom__')
-        if target:
-            for widget in target.spell_widgets():
-                if widget.spell.pauses_on_camp:
-                    widget.resume()
         self._paused = None
 
     def load_all(self, serialized):
@@ -302,13 +291,6 @@ class Spells(ParserWindow):
         if target:
             for widget in target.spell_widgets():
                 widget._remove()
-
-        # Remove all custom timers that pause when camped
-        target = self._spell_container.get_spell_target_by_name('__custom__')
-        if target:
-            for widget in target.spell_widgets():
-                if widget.spell.pauses_on_camp:
-                    widget._remove()
 
         # Load up the timers
         for target, spells in serialized.items():
@@ -324,15 +306,6 @@ class Spells(ParserWindow):
             spells = []
             for widget in target.spell_widgets():
                 spells.append(widget.serialize_spell())
-            targets[target.name] = spells
-
-        # Collect all spells that are marked as pauses_on_camp (custom timers that are on_you)
-        target = self._spell_container.get_spell_target_by_name('__custom__')
-        if target:
-            spells = []
-            for widget in target.spell_widgets():
-                if widget.spell.pauses_on_camp:
-                    spells.append(widget.serialize_spell())
             targets[target.name] = spells
         return targets
 
@@ -585,7 +558,6 @@ class Spell:
         self.pvp_duration = 0
         self.type = 0
         self.spell_icon = 0
-        self.pauses_on_camp = False
         self.__dict__.update(kwargs)
 
 
