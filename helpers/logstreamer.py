@@ -8,6 +8,10 @@ from helpers.win32 import getIdleTime
 
 class LogStreamer:
 
+    PRESENT = False
+    IDLE = 1
+    AFK = 2
+
     def __init__(self):
         self.trigger_cache = None
         self.trigger_cache_hash = None
@@ -18,9 +22,14 @@ class LogStreamer:
             return False
         idle_time = config.data['push']['idle_time_to_afk']
         if idle_time > 0:
-            return self.is_afk or getIdleTime() > idle_time
+            if self.is_afk:
+                return self.AFK
+            elif getIdleTime() > idle_time:
+                return self.IDLE
+            else:
+                return self.PRESENT
         else:
-            return self.is_afk
+            return self.AFK if self.is_afk else self.PRESENT
 
     def get_regex_triggers(self):
         cfg = tuple([tuple(l) for l in config.data['push']['triggers']])

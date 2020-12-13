@@ -29,6 +29,7 @@ class Spells(ParserWindow):
         self.spell_book = create_spell_book()
         self._custom_timers = {}  # regex : CustomTimer
         self.load_custom_timers()
+        self._camped = None
         self._casting = None  # holds Spell when casting
         self._zoning = None  # holds time of zone or None
         self._spell_triggers = []  # need a queue because of landing windows
@@ -38,16 +39,31 @@ class Spells(ParserWindow):
     def _setup_ui(self):
         self.setMinimumWidth(150)
 
+        self._afk_frame = QFrame()
+        self._afk_layout = QHBoxLayout()
         self._afk_indicator = QLabel('AFK')
         self._afk_indicator.setObjectName("ParserWindowAFKIndicator")
         self._afk_indicator.setAlignment(Qt.AlignCenter)
+        self._afk_indicator.setVisible(False)
+        self._afk_layout.addWidget(self._afk_indicator)
+        self._camp_indicator = QLabel('CAMPED')
+        self._camp_indicator.setObjectName("ParserWindowCampIndicator")
+        self._camp_indicator.setAlignment(Qt.AlignCenter)
+        self._camp_indicator.setVisible(False)
+        self._afk_layout.addWidget(self._camp_indicator)
+        self._idle_indicator = QLabel('IDLE')
+        self._idle_indicator.setObjectName("ParserWindowIdleIndicator")
+        self._idle_indicator.setAlignment(Qt.AlignCenter)
+        self._idle_indicator.setVisible(False)
+        self._afk_layout.addWidget(self._idle_indicator)
+        self._afk_frame.setLayout(self._afk_layout)
 
         self._spell_container = SpellContainer()
         self._scroll_area = QScrollArea()
         self._scroll_area.setWidgetResizable(True)
         self._scroll_area.setWidget(self._spell_container)
         self._scroll_area.setObjectName('SpellScrollArea')
-        self.content.addWidget(self._afk_indicator, 0)
+        self.content.addWidget(self._afk_frame, 0)
         self.content.addWidget(self._scroll_area, 1)
         # self._custom_timer_toggle = QPushButton('\u26A1')
         # self._custom_timer_toggle.setCheckable(True)
@@ -69,9 +85,19 @@ class Spells(ParserWindow):
         self._level_widget.valueChanged.connect(self._level_change)
 
     def _update_afk(self):
-        visible = self.logstreamer.is_idle_or_afk()
-        if visible != self._afk_indicator.isVisible():
-            self._afk_indicator.setVisible(visible)
+        afk_visible = self.logstreamer.is_idle_or_afk()
+        camp_visible = not self.isInGame()
+        if afk_visible == LogStreamer.PRESENT:
+            self._afk_indicator.setVisible(False)
+            self._idle_indicator.setVisible(False)
+        elif afk_visible == LogStreamer.AFK:
+            self._afk_indicator.setVisible(True)
+            self._idle_indicator.setVisible(False)
+        elif afk_visible == LogStreamer.IDLE:
+            self._afk_indicator.setVisible(False)
+            self._idle_indicator.setVisible(True)
+        if camp_visible != self._camp_indicator.isVisible():
+            self._camp_indicator.setVisible(camp_visible)
         QTimer.singleShot(1000, self._update_afk)
 
     def _spell_triggered(self):
@@ -146,7 +172,7 @@ class Spells(ParserWindow):
               text[:26] == 'You try to cast a spell on'):
             self._remove_spell_trigger()
 
-            # Elongate self buff timers by time zoning
+        # Elongate self buff timers by time zoning
         elif text[:23] == 'LOADING, PLEASE WAIT...':
             self._spell_triggered()
             self._remove_spell_trigger()
@@ -164,6 +190,17 @@ class Spells(ParserWindow):
                 for spell_widget in spell_target.spell_widgets():
                     spell_widget.elongate(delay)
                     spell_widget.resume()
+        elif text[:20] == "Welcome to EverQuest":
+            self._camped = None
+        elif text[:54] == "It will take about 5 more seconds to prepare your camp":
+            self._camped = datetime.datetime.now() + datetime.timedelta(seconds=5)
+        elif text[:37] == "You abandon your preparations to camp":
+            self._camped = None
+
+    def isInGame(self):
+        if self._camped is None:
+            return True
+        return datetime.datetime.now() <= self._camped
 
     def _remove_spell_trigger(self):
         if self._spell_trigger:
@@ -174,7 +211,7 @@ class Spells(ParserWindow):
     def _level_change(self, _):
         config.data['spells']['level'] = self._level_widget.value()
         config.save()
-    
+
     def load_custom_timers(self):
         self._custom_timers = {}
         for item in config.data['spells']['custom_timers']:
@@ -182,7 +219,7 @@ class Spells(ParserWindow):
             rx = re.compile(
                 "^{}$".format(ct.text.replace('*', '.*')),
                 re.RegexFlag.IGNORECASE
-                )
+            )
             self._custom_timers[rx] = ct
 
     def _toggle_custom_timers(self, _):

@@ -22,7 +22,9 @@ os.environ['QT_SCALE_FACTOR'] = str(
 
 CURRENT_VERSION = '0.6.0'
 if config.data['general']['update_check']:
-    ONLINE_VERSION = get_version()
+    # ONLINE_VERSION = get_version()
+    # We want to disable online checks for now
+    ONLINE_VERSION = CURRENT_VERSION
 else:
     ONLINE_VERSION = CURRENT_VERSION
 

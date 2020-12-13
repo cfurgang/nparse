@@ -161,7 +161,7 @@
     font-size: 14px;
 }
 
-#ParserWindowAFKIndicator {
+#ParserWindowAFKIndicator, #ParserWindowCampIndicator, #ParserWindowIdleIndicator {
     color: rgb(200, 200, 200);
     font-weight: bold;
     font-size: 14px;
