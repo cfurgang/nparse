@@ -124,6 +124,9 @@ class Spells(ParserWindow):
                 pass
             self.load_all(serialized)
         self.character_name = charname
+        target = self._spell_container.get_spell_target_by_name('__you__')
+        if target and charname:
+            target.setTargetVisibleName(charname)
 
     def updateCharacterSpellState(self):
         if not config.data['spells']['save_spells'] or self.character_name is None or not self.logstreamer.isUserPlayingEQ():
@@ -368,6 +371,9 @@ class SpellTarget(QFrame):
         self.target_label.mouseDoubleClickEvent = self._remove
         self.layout().addWidget(self.target_label, 0)
         self.layout().addStretch()
+
+    def setTargetVisibleName(self, name):
+        self.target_label.setText('You (%s)' % name)
 
     def _remove(self, event=None):
         self.setParent(None)
