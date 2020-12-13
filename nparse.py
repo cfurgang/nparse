@@ -98,10 +98,10 @@ class NomnsParse(QApplication):
 
     def _parse(self, new_line):
         if new_line:
-            timestamp, text = new_line  # (datetime, text)
+            timestamp, text, charname = new_line  # (datetime, text)
             #  don't send parse to non toggled items, except maps.  always parse maps
             for parser in [parser for parser in self._parsers if config.data[parser.name]['toggled'] or parser.name == 'maps']:
-                parser.parse(timestamp, text)
+                parser.parse(timestamp, text, charname)
 
     def _menu(self, event):
         """Returns a new QMenu for system tray."""

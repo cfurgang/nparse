@@ -110,7 +110,7 @@ class Spells(ParserWindow):
                         self._spell_trigger.spell, target[0], target[1])
         self._remove_spell_trigger()
 
-    def parse(self, timestamp, text):
+    def parse(self, timestamp, text, charname):
         """Parse casting triggers (casting, failure, success)."""
 
         # caoilainn fork

@@ -59,7 +59,7 @@ class Maps(ParserWindow):
         else:
             self._map.load_map('west freeport')
 
-    def parse(self, timestamp, text):
+    def parse(self, timestamp, text, charname):
         if text[:23] == 'LOADING, PLEASE WAIT...':
             pass
         if text[:16] == 'You have entered':
