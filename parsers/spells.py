@@ -184,12 +184,10 @@ class Spells(ParserWindow):
                 for spell_widget in spell_target.spell_widgets():
                     spell_widget.pause()
         elif self._zoning and text[:16] == 'You have entered':
-            delay = (timestamp - self._zoning).total_seconds()
             spell_target = self._spell_container.get_spell_target_by_name(
                 '__you__')
             if spell_target:
                 for spell_widget in spell_target.spell_widgets():
-                    spell_widget.elongate(delay)
                     spell_widget.resume()
 
     def _remove_spell_trigger(self):
@@ -238,7 +236,6 @@ class Spells(ParserWindow):
         target = self._spell_container.get_spell_target_by_name('__you__')
         if target:
             for widget in target.spell_widgets():
-                widget.elongate(delay)
                 widget.resume()
         self._paused = None
 
@@ -356,6 +353,7 @@ class SpellWidget(QFrame):
         self.setObjectName('SpellWidget')
         self.spell = spell
         self._active = True
+        self._remaining_seconds = 0
 
         self._setup_ui()
         self._calculate(timestamp)
@@ -430,13 +428,13 @@ class SpellWidget(QFrame):
         QTimer.singleShot(1000, self._update)
 
     def pause(self):
+        self._remaining_seconds = (self.end_time - datetime.datetime.now()).total_seconds()
         self._active = False
 
     def resume(self):
+        self.end_time = datetime.datetime.now() + datetime.timedelta(seconds=self._remaining_seconds)
         self._active = True
-
-    def elongate(self, seconds):
-        self.end_time += datetime.timedelta(seconds=abs(seconds))
+        self._remaining_seconds = 0
 
     def _remove(self):
         self.setParent(None)
