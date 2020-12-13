@@ -90,7 +90,7 @@ class LogStreamer:
     def stream(self, timestamp, text):
 
         # Deactivate camp mode if we receive any messages (1 second buffer just for safety)
-        if timestamp > self.camp_time + timedelta(seconds=1):
+        if self.camp_time and timestamp > self.camp_time + timedelta(seconds=1):
             self.camp_time = None
 
         # Switch AFK on and off
