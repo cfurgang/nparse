@@ -2,7 +2,7 @@
 import os
 import sys
 import webbrowser
-from plugins import Plugin
+from plugins import PluginManager, Plugin
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QCursor, QFontDatabase, QIcon
@@ -67,8 +67,10 @@ class NomnsParse(QApplication):
             )
 
         # Plugin support
-        self.plugins = Plugin.load_all_plugins()
-        Plugin.hook(Plugin.on_app_start, self)
+        self.plugins = PluginManager(self)
+        self.plugins.discover_plugins(enable_all=config.data['general']['enable_plugins'])
+        self.plugins.hook(Plugin.on_app_start, self)
+        # End plugin support
 
     def _load_parsers(self):
         self._parsers = [
@@ -133,13 +135,25 @@ class NomnsParse(QApplication):
 
         menu.addSeparator()
         settings_action = menu.addAction('Settings')
+
+        # Plugin support for adding menu items
+        if self.plugins.has_plugins():
+            menu.addSeparator()
+        plugin_options = self.plugins.prepare_plugin_menu(menu)
+        self.plugins.hook(Plugin.on_menu_display, menu)
+        # End plugin support
+
         menu.addSeparator()
         quit_action = menu.addAction('Quit')
 
-        # Plugin support
-        Plugin.hook(Plugin.on_menu_display, menu)
+        # Show the menu
         action = menu.exec_(QCursor.pos())
-        Plugin.hook(Plugin.on_menu_click, action)
+
+        # Plugin support for handling menu actions
+        if plugin_options:
+            plugin_options(action)
+        self.plugins.hook(Plugin.on_menu_click, action)
+        # End plugin support
 
         if action == check_version_action:
             webbrowser.open('https://github.com/nomns/nparse/releases')
@@ -179,7 +193,10 @@ class NomnsParse(QApplication):
                 config.save()
 
             self._system_tray.setVisible(False)
-            Plugin.hook(Plugin.on_app_quit, self)
+
+            # Plugin support
+            self.plugins.hook(Plugin.on_app_quit, self)
+
             self.quit()
 
         elif action in parser_toggles:
