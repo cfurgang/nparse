@@ -2,6 +2,7 @@
 import os
 import sys
 import webbrowser
+from plugins import Plugin
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QCursor, QFontDatabase, QIcon
@@ -20,7 +21,7 @@ os.environ['QT_SCALE_FACTOR'] = str(
     config.data['general']['qt_scale_factor'] / 100)
 
 
-CURRENT_VERSION = '0.6.1-Caoilainn'
+CURRENT_VERSION = '0.6.2-Caoilainn'
 if config.data['general']['update_check']:
     # ONLINE_VERSION = get_version()
     # We want to disable online checks for now
@@ -64,6 +65,10 @@ class NomnsParse(QApplication):
                 ),
                 msecs=3000
             )
+
+        # Plugin support
+        self.plugins = Plugin.load_all_plugins()
+        Plugin.hook(Plugin.on_app_start, self)
 
     def _load_parsers(self):
         self._parsers = [
@@ -131,7 +136,10 @@ class NomnsParse(QApplication):
         menu.addSeparator()
         quit_action = menu.addAction('Quit')
 
+        # Plugin support
+        Plugin.hook(Plugin.on_menu_display, menu)
         action = menu.exec_(QCursor.pos())
+        Plugin.hook(Plugin.on_menu_click, action)
 
         if action == check_version_action:
             webbrowser.open('https://github.com/nomns/nparse/releases')
@@ -171,6 +179,7 @@ class NomnsParse(QApplication):
                 config.save()
 
             self._system_tray.setVisible(False)
+            Plugin.hook(Plugin.on_app_quit, self)
             self.quit()
 
         elif action in parser_toggles:

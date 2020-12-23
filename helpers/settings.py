@@ -152,6 +152,13 @@ class SettingsWindow(QDialog):
         gsl_scaling.setSuffix('%')
         gsl_scaling.setObjectName('general:qt_scale_factor')
         gsl.addRow('Window Scaling Factor', gsl_scaling)
+        gsl.addRow(SettingsHeader('experimental'))
+        gsl_enable_plugins = QCheckBox()
+        gsl_enable_plugins.setObjectName('general:enable_plugins')
+        gsl.addRow('Enable Plugins', gsl_enable_plugins)
+        gsl_safe_mode = QCheckBox()
+        gsl_safe_mode.setObjectName('general:safe_mode')
+        gsl.addRow('Safe Mode', gsl_safe_mode)
         general_settings.setLayout(gsl)
 
         stacked_widgets.append(('General', general_settings))

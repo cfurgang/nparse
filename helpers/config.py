@@ -64,6 +64,14 @@ def verify_settings():
         data['general'].get('update_check', True),
         True
     )
+    data['general']['enable_plugins'] = get_setting(
+        data['general'].get('enable_plugins', True),
+        True
+    )
+    data['general']['safe_mode'] = get_setting(
+        data['general'].get('safe_mode', True),
+        True
+    )
 
     # maps
     data['maps'] = data.get('maps', {})
