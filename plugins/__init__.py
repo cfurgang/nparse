@@ -10,11 +10,13 @@ class Plugin:
     def load_all_plugins(cls):
         import os
         import importlib
+        import sys
         plugins = set()
         pluginfiles = os.listdir('plugins')
         for file in pluginfiles:
             if file[:2] == '__' or file[-3:] != '.py':
                 continue
+            sys.path.append(os.path.abspath('.'))
             plugin = importlib.import_module("plugins." + file[:file.rfind('.')])
             plugins.add(plugin)
         cls.ALL_PLUGINS.update(plugins)
