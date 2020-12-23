@@ -1,3 +1,7 @@
+
+import os
+import importlib
+import inspect
 from helpers import config
 
 
@@ -7,17 +11,17 @@ class Plugin:
     ENABLED_PLUGINS = set()
 
     @classmethod
-    def load_all_plugins(cls):
-        import os
-        import importlib
-        import sys
+    def load_all_plugins(cls, directory=os.path.abspath('.')):
         plugins = set()
-        pluginfiles = os.listdir('plugins')
+        pluginsdir = os.path.join(directory, 'plugins')
+        pluginfiles = os.listdir(pluginsdir)
         for file in pluginfiles:
             if file[:2] == '__' or file[-3:] != '.py':
                 continue
-            sys.path.append(os.path.abspath('.'))
-            plugin = importlib.import_module("plugins." + file[:file.rfind('.')])
+            module_name = "plugins." + file[:file.rfind('.')]
+            spec = importlib.util.spec_from_file_location(module_name, os.path.join(pluginsdir, file))
+            plugin = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(plugin)
             plugins.add(plugin)
         cls.ALL_PLUGINS.update(plugins)
         cls.ENABLED_PLUGINS.update(plugins)
@@ -26,7 +30,6 @@ class Plugin:
 
     @classmethod
     def unload_plugin(cls, plugin):
-        import inspect
         if isinstance(plugin, type(inspect)):
             cls.ENABLED_PLUGINS.remove(plugin)
             cls.describe_plugins()
@@ -35,7 +38,14 @@ class Plugin:
             cls.ENABLED_PLUGINS = set(filter(lambda p: p.__name__ != module_name, cls.PLUGINS))
             cls.describe_plugins()
         else:
-            cls.unload_plugin(inspect.getmodule(plugin))
+            cls.unload_plugin(cls.plugin_module_for_plugin_class(plugin))
+
+    @classmethod
+    def plugin_module_for_plugin_class(cls, class_):
+        for module in cls.ALL_PLUGINS:
+            for name, obj in inspect.getmembers(module):
+                if obj == class_:
+                    return module
 
     @classmethod
     def hook(cls, hook_name, *kargs, **kwargs):
