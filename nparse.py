@@ -36,6 +36,11 @@ class NomnsParse(QApplication):
     def __init__(self, *args):
         super().__init__(*args)
 
+        # Plugin support
+        self.plugins = PluginManager(self)
+        self.plugins.discover_plugins(enable_all=config.data['general']['enable_plugins'])
+        self.plugins.hook(Plugin.on_app_start, self)
+        # End plugin support
 
         # Updates
         self._toggled = False
@@ -66,18 +71,13 @@ class NomnsParse(QApplication):
                 msecs=3000
             )
 
-        # Plugin support
-        self.plugins = PluginManager(self)
-        self.plugins.discover_plugins(enable_all=config.data['general']['enable_plugins'])
-        self.plugins.hook(Plugin.on_app_start, self)
-        # End plugin support
-
     def _load_parsers(self):
         self._parsers = [
             parsers.Maps(),
             parsers.Spells()
         ]
         for parser in self._parsers:
+            self.plugins.hook(Plugin.on_parser_load, parser)
             if parser.name in config.data.keys() and 'geometry' in config.data[parser.name].keys():
                 g = config.data[parser.name]['geometry']
                 parser.setGeometry(g[0], g[1], g[2], g[3])
