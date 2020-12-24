@@ -83,6 +83,7 @@ class MetaPlugin:
             if self.manager.app and hasattr(self.manager.app, '_parsers'):
                 for parser in self.manager.app._parsers:
                     self.hook(Plugin.on_parser_load, set([instance]), parser)
+            self.hook(Plugin.on_app_start, set([instance]), self.manager.app)
             self.instances.add(instance)
 
         if not found_instances:
@@ -95,6 +96,7 @@ class MetaPlugin:
         if self.manager.app and hasattr(self.manager.app, '_parsers'):
             for parser in self.manager.app._parsers:
                 self.hook(Plugin.on_parser_unload, self.instances, parser)
+        self.hook(Plugin.on_app_quit, self.instances, self.manager.app)
         self.hook(Plugin.on_unload, self.instances, self.manager.app)
         self.instances = set()
 
