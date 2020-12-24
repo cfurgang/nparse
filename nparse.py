@@ -39,7 +39,6 @@ class NomnsParse(QApplication):
         # Plugin support
         self.plugins = PluginManager(self)
         self.plugins.discover_plugins(enable_all=config.data['general']['enable_plugins'])
-        self.plugins.hook(Plugin.on_app_start, self)
         # End plugin support
 
         # Updates
@@ -70,6 +69,8 @@ class NomnsParse(QApplication):
                 ),
                 msecs=3000
             )
+
+        self.plugins.hook(Plugin.on_app_start, self)
 
     def _load_parsers(self):
         self._parsers = [
